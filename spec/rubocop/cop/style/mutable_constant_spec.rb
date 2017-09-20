@@ -38,6 +38,9 @@ describe RuboCop::Cop::Style::MutableConstant do
   it_behaves_like :mutable_objects, '[1, 2, 3]'
   it_behaves_like :mutable_objects, '{ a: 1, b: 2 }'
   it_behaves_like :mutable_objects, "'str'"
+  it_behaves_like :mutable_objects, "'foo' + 'bar'"
+  it_behaves_like :mutable_objects, "'foo'.freeze + 'bar'"
+  it_behaves_like :mutable_objects, "'foo' + 'bar'.freeze"
   it_behaves_like :mutable_objects, '"top#{1 + 2}"'
 
   shared_examples :immutable_objects do |o|

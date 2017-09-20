@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pp'
+
 module RuboCop
   module Cop
     module Style
@@ -12,6 +14,12 @@ module RuboCop
       #
       #   # good
       #   CONST = [1, 2, 3].freeze
+      #
+      #   # bad
+      #   CONST = 'foo' + 'bar'
+      #
+      #   # good
+      #   CONST = ('foo' + 'bar').freeze
       class MutableConstant < Cop
         include FrozenStringLiteral
 
@@ -35,8 +43,13 @@ module RuboCop
         def on_assignment(value)
           value = splat_value(value) if splat_value(value)
 
-          return unless value && value.mutable_literal?
-          return if FROZEN_STRING_LITERAL_TYPES.include?(value.type) &&
+          res = value.each_node.select(&:mutable_literal?)
+          res2 = value.each_node.select { |e| freeze? e }.pop
+          return if res.empty? # not mutable
+          unless res2.nil?
+            return if (res2.descendants & res).size == res.size
+          end
+          return if FROZEN_STRING_LITERAL_TYPES.include?(res[0].type) &&
                     frozen_string_literals_enabled?
 
           add_offense(value)
@@ -57,6 +70,10 @@ module RuboCop
 
         def_node_matcher :splat_value, <<-PATTERN
           (array (splat $_))
+        PATTERN
+
+        def_node_matcher :freeze?, <<-PATTERN
+          (send $... :freeze)
         PATTERN
       end
     end
